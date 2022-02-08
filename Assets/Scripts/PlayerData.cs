@@ -4,11 +4,25 @@ namespace SaveSystemTutorial
 {    
     public class PlayerData : MonoBehaviour
     {
+
         #region Fields
-        
+
         [SerializeField] string playerName = "Player Name";
         [SerializeField] int level = 0;
         [SerializeField] int coin = 0;
+
+        const string PLAYER_DATA_KEY = "PlayerData";
+
+        /// <summary>
+        /// 需要System.Serializable，否则JsonUtility不可转换
+        /// </summary>
+        [System.Serializable]class SaveDate
+        {
+            public string playerName;
+            public int playerLevel;
+            public int playerCoin;
+            public Vector3 playerPos;
+        }
 
         #endregion
 
@@ -49,6 +63,8 @@ namespace SaveSystemTutorial
         /// </summary>
         void SaveByPlayerPrefs()
         {
+            #region 不封装数据的方法
+            /*
             //保存玩家名字
             PlayerPrefs.SetString("PlayerName", playerName);
 
@@ -63,13 +79,30 @@ namespace SaveSystemTutorial
             PlayerPrefs.SetFloat("PlayerPosZ", transform.position.z);
 
             PlayerPrefs.Save();
+            */
+            #endregion
+
+            #region 封装数据的方法
+
+            var saveData = new SaveDate();
+
+            saveData.playerName = playerName;
+            saveData.playerLevel = level;
+            saveData.playerCoin = coin;
+            saveData.playerPos = transform.position;
+
+            SaveSystem.SaveByPlayerPrefs(PLAYER_DATA_KEY, saveData);
+
+            #endregion
         }
-        
+
         /// <summary>
         /// PlayerPrefs方式读取
         /// </summary>
         void LoadByPlayerPrefs()
         {
+            #region 不封装数据的方法
+            /*
             playerName = PlayerPrefs.GetString("PlayerName","None");
 
             level = PlayerPrefs.GetInt("PlayerLevel",0);
@@ -79,6 +112,29 @@ namespace SaveSystemTutorial
                 PlayerPrefs.GetFloat("PlayerPosX", 0f),
                 PlayerPrefs.GetFloat("PlayerPosy", 0f),
                 PlayerPrefs.GetFloat("PlayerPosZ", 0f));
+            */
+            #endregion
+
+            #region 封装数据的方法
+
+            var json = SaveSystem.LoadByPlayerPrefs(PLAYER_DATA_KEY);
+            var saveData = JsonUtility.FromJson<SaveDate>(json);
+
+            playerName = saveData.playerName;
+            level = saveData.playerLevel;
+            coin= saveData.playerCoin;
+            transform.position = saveData.playerPos;
+
+            #endregion
+        }
+
+        /// <summary>
+        /// 删除存档
+        /// </summary>
+        [UnityEditor.MenuItem("工具/删除存档")]
+        public static void DeletePlayerDataPrefs()
+        {
+            PlayerPrefs.DeleteAll();
         }
 
         #endregion
