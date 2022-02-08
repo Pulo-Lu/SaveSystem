@@ -12,6 +12,8 @@ namespace SaveSystemTutorial
         [SerializeField] int coin = 0;
 
         const string PLAYER_DATA_KEY = "PlayerData";
+        
+        const string PLAYER_DATA_FILE_NAME = "PlayerData.data";
 
         /// <summary>
         /// 需要System.Serializable，否则JsonUtility不可转换
@@ -43,7 +45,8 @@ namespace SaveSystemTutorial
         /// </summary>
         public void Save()
         {
-            SaveByPlayerPrefs();
+            //SaveByPlayerPrefs();
+            SaveByJson();
         }
 
         /// <summary>
@@ -51,7 +54,8 @@ namespace SaveSystemTutorial
         /// </summary>
         public void Load()
         {
-            LoadByPlayerPrefs();   
+            //LoadByPlayerPrefs();   
+            LoadFromJson();
         }
 
         #endregion
@@ -84,17 +88,14 @@ namespace SaveSystemTutorial
 
             #region 封装数据的方法
 
-            var saveData = new SaveDate();
-
-            saveData.playerName = playerName;
-            saveData.playerLevel = level;
-            saveData.playerCoin = coin;
-            saveData.playerPos = transform.position;
+            SaveDate saveData = SavingData();
 
             SaveSystem.SaveByPlayerPrefs(PLAYER_DATA_KEY, saveData);
 
             #endregion
         }
+
+      
 
         /// <summary>
         /// PlayerPrefs方式读取
@@ -120,24 +121,86 @@ namespace SaveSystemTutorial
             var json = SaveSystem.LoadByPlayerPrefs(PLAYER_DATA_KEY);
             var saveData = JsonUtility.FromJson<SaveDate>(json);
 
-            playerName = saveData.playerName;
-            level = saveData.playerLevel;
-            coin= saveData.playerCoin;
-            transform.position = saveData.playerPos;
+            LoadData(saveData);
 
             #endregion
+        }
+
+        #endregion
+
+
+        #region JSON方式
+
+        /// <summary>
+        /// Json方式保存
+        /// </summary>
+        void SaveByJson()
+        {
+            SaveSystem.SaveByJson(PLAYER_DATA_FILE_NAME, SavingData());        
+            
+            //多存档雏形 ： 根据时间存档
+            //SaveSystem.SaveByJson($"{System.DateTime.Now:yyyy.dd.M HH-mm-ss} " + PLAYER_DATA_FILE_NAME, SavingData());
+        }
+
+        /// <summary>
+        /// Json方式读取
+        /// </summary>
+        void LoadFromJson()
+        {
+            var saveData = SaveSystem.LoadFromJson<SaveDate>(PLAYER_DATA_FILE_NAME);
+
+            LoadData(saveData);
+        }
+
+    
+
+        #endregion
+
+        #region 其他功能
+        /// <summary>
+        /// 要存档的数据
+        /// </summary>
+        /// <returns></returns>
+        SaveDate SavingData()
+        {
+            var saveData = new SaveDate();
+
+            saveData.playerName = playerName;
+            saveData.playerLevel = level;
+            saveData.playerCoin = coin;
+            saveData.playerPos = transform.position;
+            return saveData;
+        }
+
+        /// <summary>
+        /// 读取存档赋值
+        /// </summary>
+        /// <param name="saveData"></param>
+        void LoadData(SaveDate saveData)
+        {
+            playerName = saveData.playerName;
+            level = saveData.playerLevel;
+            coin = saveData.playerCoin;
+            transform.position = saveData.playerPos;
         }
 
         /// <summary>
         /// 删除存档
         /// </summary>
-        [UnityEditor.MenuItem("工具/删除存档")]
+        [UnityEditor.MenuItem("工具/删除PlayerPrefs存档")]
         public static void DeletePlayerDataPrefs()
         {
-            PlayerPrefs.DeleteAll();
+            PlayerPrefs.DeleteKey(PLAYER_DATA_KEY);
         }
 
+        /// <summary>
+        /// 删除存档
+        /// </summary>
+        [UnityEditor.MenuItem("工具/删除Json存档")]
+        public static void DeletePlayerDataJson()
+        {
+            SaveSystem.DeleteSaveFile(PLAYER_DATA_FILE_NAME);
+        }
         #endregion
-
     }
 }
